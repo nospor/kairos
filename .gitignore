@@ -1,0 +1,11 @@
+# Binary
+kairos
+
+# Test artifacts
+report.csv
+*.csv
+
+# IDE
+.idea/
+.vscode/
+spec.md
