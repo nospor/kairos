@@ -28,6 +28,7 @@ type ReportRow struct {
 	ProjectName string
 	TaskName    string
 	Duration    time.Duration
+	Date        string
 }
 
 // TaskInfo holds task details along with its project name and total duration.

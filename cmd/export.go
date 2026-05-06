@@ -16,6 +16,7 @@ var (
 	exportMonth   bool
 	exportFrom    string
 	exportTo      string
+	exportGroupBy string
 )
 
 var exportCmd = &cobra.Command{
@@ -24,12 +25,12 @@ var exportCmd = &cobra.Command{
 	Long: `Export the report to a specified file in CSV format.
 
 Supports the same filtering flags as the report command:
-  --project, --today, --week, --month, --from, --to`,
+  --project, --today, --week, --month, --from, --to, --group-by`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		filename := args[0]
 
-		filter, err := buildFilter(exportProject, exportToday, exportWeek, exportMonth, exportFrom, exportTo)
+		filter, err := buildFilter(exportProject, exportToday, exportWeek, exportMonth, exportFrom, exportTo, exportGroupBy)
 		if err != nil {
 			return err
 		}
@@ -50,9 +51,23 @@ Supports the same filtering flags as the report command:
 		}
 		defer f.Close()
 
+		hasDate := false
+		for _, r := range rows {
+			if r.Date != "" {
+				hasDate = true
+				break
+			}
+		}
+
 		// Header
-		if _, err := fmt.Fprintf(f, "\"%s\",\"%s\",\"%s\"\n", "Project Name", "Task Name", "Duration"); err != nil {
-			return fmt.Errorf("could not write CSV header: %w", err)
+		if hasDate {
+			if _, err := fmt.Fprintf(f, "\"%s\",\"%s\",\"%s\",\"%s\"\n", "Project Name", "Task Name", "Date", "Duration"); err != nil {
+				return fmt.Errorf("could not write CSV header: %w", err)
+			}
+		} else {
+			if _, err := fmt.Fprintf(f, "\"%s\",\"%s\",\"%s\"\n", "Project Name", "Task Name", "Duration"); err != nil {
+				return fmt.Errorf("could not write CSV header: %w", err)
+			}
 		}
 
 		var currentProject string
@@ -63,8 +78,14 @@ Supports the same filtering flags as the report command:
 			if currentProject != "" && r.ProjectName != currentProject {
 				// Print subtotal for the previous project
 				projTotalName := fmt.Sprintf("%s Total", currentProject)
-				if _, err := fmt.Fprintf(f, "\"%s\",\"%s\",\"%s\"\n", projTotalName, "", formatDuration(projectTotal)); err != nil {
-					return fmt.Errorf("could not write CSV row: %w", err)
+				if hasDate {
+					if _, err := fmt.Fprintf(f, "\"%s\",\"%s\",\"%s\",\"%s\"\n", projTotalName, "", "", formatDuration(projectTotal)); err != nil {
+						return fmt.Errorf("could not write CSV row: %w", err)
+					}
+				} else {
+					if _, err := fmt.Fprintf(f, "\"%s\",\"%s\",\"%s\"\n", projTotalName, "", formatDuration(projectTotal)); err != nil {
+						return fmt.Errorf("could not write CSV row: %w", err)
+					}
 				}
 				projectTotal = 0
 			}
@@ -74,24 +95,43 @@ Supports the same filtering flags as the report command:
 
 			proj := strings.ReplaceAll(r.ProjectName, "\"", "\"\"")
 			task := strings.ReplaceAll(r.TaskName, "\"", "\"\"")
+			dateVal := strings.ReplaceAll(r.Date, "\"", "\"\"")
 			dur := formatDuration(r.Duration)
-			if _, err := fmt.Fprintf(f, "\"%s\",\"%s\",\"%s\"\n", proj, task, dur); err != nil {
-				return fmt.Errorf("could not write CSV row: %w", err)
+			if hasDate {
+				if _, err := fmt.Fprintf(f, "\"%s\",\"%s\",\"%s\",\"%s\"\n", proj, task, dateVal, dur); err != nil {
+					return fmt.Errorf("could not write CSV row: %w", err)
+				}
+			} else {
+				if _, err := fmt.Fprintf(f, "\"%s\",\"%s\",\"%s\"\n", proj, task, dur); err != nil {
+					return fmt.Errorf("could not write CSV row: %w", err)
+				}
 			}
 
 			// Last row — print final subtotal
 			if i == len(rows)-1 {
 				projTotalName := fmt.Sprintf("%s Total", currentProject)
-				if _, err := fmt.Fprintf(f, "\"%s\",\"%s\",\"%s\"\n", projTotalName, "", formatDuration(projectTotal)); err != nil {
-					return fmt.Errorf("could not write CSV row: %w", err)
+				if hasDate {
+					if _, err := fmt.Fprintf(f, "\"%s\",\"%s\",\"%s\",\"%s\"\n", projTotalName, "", "", formatDuration(projectTotal)); err != nil {
+						return fmt.Errorf("could not write CSV row: %w", err)
+					}
+				} else {
+					if _, err := fmt.Fprintf(f, "\"%s\",\"%s\",\"%s\"\n", projTotalName, "", formatDuration(projectTotal)); err != nil {
+						return fmt.Errorf("could not write CSV row: %w", err)
+					}
 				}
 			}
 		}
 
 		// Grand total if more than one project
 		if grandTotal != projectTotal || currentProject == "" {
-			if _, err := fmt.Fprintf(f, "\"%s\",\"%s\",\"%s\"\n", "Grand Total", "", formatDuration(grandTotal)); err != nil {
-				return fmt.Errorf("could not write CSV row: %w", err)
+			if hasDate {
+				if _, err := fmt.Fprintf(f, "\"%s\",\"%s\",\"%s\",\"%s\"\n", "Grand Total", "", "", formatDuration(grandTotal)); err != nil {
+					return fmt.Errorf("could not write CSV row: %w", err)
+				}
+			} else {
+				if _, err := fmt.Fprintf(f, "\"%s\",\"%s\",\"%s\"\n", "Grand Total", "", formatDuration(grandTotal)); err != nil {
+					return fmt.Errorf("could not write CSV row: %w", err)
+				}
 			}
 		}
 
@@ -107,5 +147,6 @@ func init() {
 	exportCmd.Flags().BoolVar(&exportMonth, "month", false, "export only this month's entries")
 	exportCmd.Flags().StringVar(&exportFrom, "from", "", "export entries from this date (YYYY-MM-DD)")
 	exportCmd.Flags().StringVar(&exportTo, "to", "", "export entries up to this date (YYYY-MM-DD)")
+	exportCmd.Flags().StringVar(&exportGroupBy, "group-by", "", "group given data by days, weeks, months, or years")
 	rootCmd.AddCommand(exportCmd)
 }

@@ -14,6 +14,7 @@ type ReportFilter struct {
 	ProjectName string
 	From        *time.Time
 	To          *time.Time
+	GroupBy     string
 }
 
 // CreateProject creates a new project with the given name.
@@ -307,18 +308,32 @@ func (s *Store) ListProjects() ([]model.ProjectInfo, error) {
 
 // GetReport returns aggregated report rows, optionally filtered by project and/or date range.
 func (s *Store) GetReport(filter ReportFilter) ([]model.ReportRow, error) {
-	query := `
+	var dateExpr string
+	switch filter.GroupBy {
+	case "day":
+		dateExpr = "strftime('%Y-%m-%d', datetime(te.start_at, 'unixepoch', 'localtime'))"
+	case "week":
+		dateExpr = "strftime('%Y-%W', datetime(te.start_at, 'unixepoch', 'localtime'))"
+	case "month":
+		dateExpr = "strftime('%Y-%m', datetime(te.start_at, 'unixepoch', 'localtime'))"
+	case "year":
+		dateExpr = "strftime('%Y', datetime(te.start_at, 'unixepoch', 'localtime'))"
+	default:
+		dateExpr = "NULL"
+	}
+
+	query := fmt.Sprintf(`
 		SELECT p.name, t.name, COALESCE(SUM(
 			CASE WHEN te.stop_at IS NOT NULL THEN
 				te.stop_at - te.start_at
 			ELSE
-				CAST(strftime('%s', 'now') AS INTEGER) - te.start_at
+				CAST(strftime('%%s', 'now') AS INTEGER) - te.start_at
 			END
-		), 0) as total_seconds
+		), 0) as total_seconds, COALESCE(%s, '') as date
 		FROM tasks t
 		JOIN projects p ON t.project_id = p.id
 		LEFT JOIN time_entries te ON te.task_id = t.id
-	`
+	`, dateExpr)
 
 	var conditions []string
 	var args []interface{}
@@ -340,7 +355,17 @@ func (s *Store) GetReport(filter ReportFilter) ([]model.ReportRow, error) {
 		query += " WHERE " + strings.Join(conditions, " AND ")
 	}
 
-	query += " GROUP BY p.name, t.name ORDER BY p.name, t.name"
+	groupByStr := "p.name, t.name"
+	if filter.GroupBy != "" {
+		groupByStr += ", date"
+	}
+
+	orderByStr := "p.name, t.name"
+	if filter.GroupBy != "" {
+		orderByStr += ", date"
+	}
+
+	query += " GROUP BY " + groupByStr + " ORDER BY " + orderByStr
 
 	rows, err := s.db.Query(query, args...)
 	if err != nil {
@@ -352,7 +377,7 @@ func (s *Store) GetReport(filter ReportFilter) ([]model.ReportRow, error) {
 	for rows.Next() {
 		var r model.ReportRow
 		var totalSeconds int64
-		if err := rows.Scan(&r.ProjectName, &r.TaskName, &totalSeconds); err != nil {
+		if err := rows.Scan(&r.ProjectName, &r.TaskName, &totalSeconds, &r.Date); err != nil {
 			return nil, fmt.Errorf("could not scan row: %w", err)
 		}
 		r.Duration = time.Duration(totalSeconds) * time.Second

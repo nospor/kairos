@@ -100,6 +100,7 @@ kairos report
 | `--month`             | Show only this month's entries          |
 | `--from "YYYY-MM-DD"` | Show entries starting from this date    |
 | `--to "YYYY-MM-DD"`   | Show entries up to this date            |
+| `--group-by "period"` | Group data by `day`, `week`, `month`, or `year` |
 
 **Examples:**
 
@@ -113,8 +114,11 @@ kairos report --today
 # Report for a date range
 kairos report --from "2026-01-01" --to "2026-01-31"
 
-# Export this week's data
-kairos export weekly.csv --week
+# Report grouped by month
+kairos report --group-by month
+
+# Export this week's data grouped by day
+kairos export weekly.csv --week --group-by day
 ```
 
 ### Data Management
