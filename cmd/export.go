@@ -1,9 +1,10 @@
 package cmd
 
 import (
-	"encoding/csv"
 	"fmt"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -49,17 +50,47 @@ Supports the same filtering flags as the report command:
 		}
 		defer f.Close()
 
-		w := csv.NewWriter(f)
-		defer w.Flush()
-
 		// Header
-		if err := w.Write([]string{"Project Name", "Task Name", "Duration"}); err != nil {
+		if _, err := fmt.Fprintf(f, "\"%s\",\"%s\",\"%s\"\n", "Project Name", "Task Name", "Duration"); err != nil {
 			return fmt.Errorf("could not write CSV header: %w", err)
 		}
 
-		for _, r := range rows {
-			record := []string{r.ProjectName, r.TaskName, formatDuration(r.Duration)}
-			if err := w.Write(record); err != nil {
+		var currentProject string
+		var projectTotal time.Duration
+		var grandTotal time.Duration
+
+		for i, r := range rows {
+			if currentProject != "" && r.ProjectName != currentProject {
+				// Print subtotal for the previous project
+				projTotalName := fmt.Sprintf("%s Total", currentProject)
+				if _, err := fmt.Fprintf(f, "\"%s\",\"%s\",\"%s\"\n", projTotalName, "", formatDuration(projectTotal)); err != nil {
+					return fmt.Errorf("could not write CSV row: %w", err)
+				}
+				projectTotal = 0
+			}
+			currentProject = r.ProjectName
+			projectTotal += r.Duration
+			grandTotal += r.Duration
+
+			proj := strings.ReplaceAll(r.ProjectName, "\"", "\"\"")
+			task := strings.ReplaceAll(r.TaskName, "\"", "\"\"")
+			dur := formatDuration(r.Duration)
+			if _, err := fmt.Fprintf(f, "\"%s\",\"%s\",\"%s\"\n", proj, task, dur); err != nil {
+				return fmt.Errorf("could not write CSV row: %w", err)
+			}
+
+			// Last row — print final subtotal
+			if i == len(rows)-1 {
+				projTotalName := fmt.Sprintf("%s Total", currentProject)
+				if _, err := fmt.Fprintf(f, "\"%s\",\"%s\",\"%s\"\n", projTotalName, "", formatDuration(projectTotal)); err != nil {
+					return fmt.Errorf("could not write CSV row: %w", err)
+				}
+			}
+		}
+
+		// Grand total if more than one project
+		if grandTotal != projectTotal || currentProject == "" {
+			if _, err := fmt.Fprintf(f, "\"%s\",\"%s\",\"%s\"\n", "Grand Total", "", formatDuration(grandTotal)); err != nil {
 				return fmt.Errorf("could not write CSV row: %w", err)
 			}
 		}
