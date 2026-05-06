@@ -364,3 +364,63 @@ func (s *Store) ResetAll() error {
 
 	return tx.Commit()
 }
+
+// RenameProject renames an existing project. The "General" project cannot be renamed.
+func (s *Store) RenameProject(oldName, newName string) error {
+	if oldName == "General" {
+		return fmt.Errorf("cannot rename the default \"General\" project")
+	}
+	if newName == "" {
+		return fmt.Errorf("new project name cannot be empty")
+	}
+
+	result, err := s.db.Exec("UPDATE projects SET name = ? WHERE name = ?", newName, oldName)
+	if err != nil {
+		if strings.Contains(err.Error(), "UNIQUE constraint") {
+			return fmt.Errorf("project %q already exists", newName)
+		}
+		return fmt.Errorf("could not rename project: %w", err)
+	}
+
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("project %q not found", oldName)
+	}
+	return nil
+}
+
+// RenameTask renames an existing task within the specified project.
+// If projectName is empty, the task is looked up in the "General" project.
+func (s *Store) RenameTask(oldName, newName, projectName string) error {
+	if projectName == "" {
+		projectName = "General"
+	}
+	if newName == "" {
+		return fmt.Errorf("new task name cannot be empty")
+	}
+
+	result, err := s.db.Exec(`
+		UPDATE tasks SET name = ?
+		WHERE name = ?
+		AND project_id = (SELECT id FROM projects WHERE name = ?)
+	`, newName, oldName, projectName)
+	if err != nil {
+		if strings.Contains(err.Error(), "UNIQUE constraint") {
+			return fmt.Errorf("task %q already exists in project %q", newName, projectName)
+		}
+		return fmt.Errorf("could not rename task: %w", err)
+	}
+
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		// Distinguish between "project not found" and "task not found"
+		var projectExists int
+		_ = s.db.QueryRow("SELECT COUNT(*) FROM projects WHERE name = ?", projectName).Scan(&projectExists)
+		if projectExists == 0 {
+			return fmt.Errorf("project %q not found", projectName)
+		}
+		return fmt.Errorf("task %q not found in project %q", oldName, projectName)
+	}
+	return nil
+}
+

@@ -14,20 +14,21 @@ type Store struct {
 	db *sql.DB
 }
 
-// New opens (or creates) the SQLite database at ~/.cache/kairos/kairos.db,
-// runs migrations, and returns a ready-to-use Store.
-func New() (*Store, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return nil, fmt.Errorf("could not determine home directory: %w", err)
+// New opens (or creates) the SQLite database at the given path.
+// If dbPath is empty, the default location ~/.cache/kairos/kairos.db is used.
+func New(dbPath string) (*Store, error) {
+	if dbPath == "" {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return nil, fmt.Errorf("could not determine home directory: %w", err)
+		}
+		dbPath = filepath.Join(homeDir, ".cache", "kairos", "kairos.db")
 	}
 
-	dbDir := filepath.Join(homeDir, ".cache", "kairos")
-	if err := os.MkdirAll(dbDir, 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(dbPath), 0755); err != nil {
 		return nil, fmt.Errorf("could not create database directory: %w", err)
 	}
 
-	dbPath := filepath.Join(dbDir, "kairos.db")
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		return nil, fmt.Errorf("could not open database: %w", err)
