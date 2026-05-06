@@ -130,7 +130,8 @@ func printReport(rows []model.ReportRow) {
 		if currentProject != "" && r.ProjectName != currentProject {
 			// Print subtotal for the previous project
 			fmt.Fprintf(w, "\t\t--------\n")
-			fmt.Fprintf(w, "%s Total\t\t%s\n\n", currentProject, formatDuration(projectTotal))
+			fmt.Fprintf(w, "%s Total\t\t%s\n", currentProject, formatDuration(projectTotal))
+			fmt.Fprintf(w, "\t\t\n") // spacer with tabs to preserve alignment block
 			projectTotal = 0
 		}
 		currentProject = r.ProjectName
@@ -148,7 +149,8 @@ func printReport(rows []model.ReportRow) {
 
 	// Grand total if more than one project
 	if grandTotal != projectTotal || currentProject == "" {
-		fmt.Fprintf(w, "\nGrand Total\t\t%s\n", formatDuration(grandTotal))
+		fmt.Fprintf(w, "\t\t\n") // spacer with tabs
+		fmt.Fprintf(w, "Grand Total\t\t%s\n", formatDuration(grandTotal))
 	}
 
 	w.Flush()
