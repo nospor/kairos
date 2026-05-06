@@ -134,4 +134,8 @@ The database is created automatically on first use.
 
 ## License
 
-MIT
+Kairos is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
+## Thanks For Visiting
+Hope you liked it. Wanna **[buy Me a coffee](https://www.buymeacoffee.com/nospor)**?
+

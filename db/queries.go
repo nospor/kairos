@@ -204,7 +204,7 @@ func (s *Store) ListTasks() ([]model.TaskInfo, error) {
 		JOIN projects p ON t.project_id = p.id
 		LEFT JOIN time_entries te ON te.task_id = t.id
 		GROUP BY t.id, t.name, p.name
-		ORDER BY p.name, t.name
+		ORDER BY MAX(te.start_at) DESC NULLS LAST, t.name
 	`)
 	if err != nil {
 		return nil, fmt.Errorf("could not list tasks: %w", err)
@@ -226,6 +226,7 @@ func (s *Store) ListTasks() ([]model.TaskInfo, error) {
 
 // ListProjects returns all projects with their tasks and durations.
 func (s *Store) ListProjects() ([]model.ProjectInfo, error) {
+	// We need the max start_at per project for ordering, computed in a subquery.
 	rows, err := s.db.Query(`
 		SELECT p.name, COALESCE(t.name, ''), COALESCE(SUM(
 			CASE WHEN te.stop_at IS NOT NULL THEN
@@ -233,12 +234,15 @@ func (s *Store) ListProjects() ([]model.ProjectInfo, error) {
 			ELSE
 				CAST(strftime('%s', 'now') AS INTEGER) - te.start_at
 			END
-		), 0) as total_seconds
+		), 0) as total_seconds,
+		(SELECT MAX(te2.start_at) FROM time_entries te2
+		 JOIN tasks t2 ON te2.task_id = t2.id
+		 WHERE t2.project_id = p.id) as last_used
 		FROM projects p
 		LEFT JOIN tasks t ON t.project_id = p.id
 		LEFT JOIN time_entries te ON te.task_id = t.id
 		GROUP BY p.id, p.name, t.id, t.name
-		ORDER BY p.name, t.name
+		ORDER BY last_used DESC NULLS LAST, p.name, MAX(te.start_at) DESC NULLS LAST, t.name
 	`)
 	if err != nil {
 		return nil, fmt.Errorf("could not list projects: %w", err)
@@ -251,7 +255,8 @@ func (s *Store) ListProjects() ([]model.ProjectInfo, error) {
 	for rows.Next() {
 		var projectName, taskName string
 		var totalSeconds int64
-		if err := rows.Scan(&projectName, &taskName, &totalSeconds); err != nil {
+		var lastUsed interface{} // consumed for ordering only
+		if err := rows.Scan(&projectName, &taskName, &totalSeconds, &lastUsed); err != nil {
 			return nil, fmt.Errorf("could not scan row: %w", err)
 		}
 
