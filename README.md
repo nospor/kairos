@@ -35,8 +35,8 @@ sudo cp kairos /usr/local/bin/
 kairos create-project "Project A"
 kairos create "Task 1" -p "Project A"
 
-# Start tracking
-kairos start "Task 1"
+# Start tracking (must specify -p if task is not in General)
+kairos start "Task 1" -p "Project A"
 
 # ... do some work ...
 
@@ -63,15 +63,25 @@ kairos report
 | Command                               | Description                                   |
 | ------------------------------------- | --------------------------------------------- |
 | `kairos create "Task" [-p "Project"]` | Create a task (defaults to "General" project) |
+| `kairos edit "Task" "New" [-p "Proj"]`| Rename a task (defaults to "General" project) |
 | `kairos delete "Task"`                | Delete a task and its time entries            |
 | `kairos list`                         | List all tasks with their durations           |
 
+### Projects
+
+| Command                                     | Description                        |
+| ------------------------------------------- | ---------------------------------- |
+| `kairos create-project "Name"`              | Create a new project               |
+| `kairos edit-project "Old Name" "New Name"` | Rename a project                   |
+| `kairos delete-project "Name"`              | Delete a project and all its tasks |
+| `kairos list-projects`                      | List all projects and their tasks  |
+
 ### Time Tracking
 
-| Command               | Description                             |
-| --------------------- | --------------------------------------- |
-| `kairos start "Task"` | Start tracking time for a task          |
-| `kairos stop`         | Stop tracking the currently active task |
+| Command                              | Description                                 |
+| ------------------------------------ | ------------------------------------------- |
+| `kairos start "Task" [-p "Project"]` | Start tracking a task (defaults to General) |
+| `kairos stop`                        | Stop tracking the currently active task     |
 
 ### Reporting
 
@@ -113,13 +123,34 @@ kairos export weekly.csv --week
 | -------------- | ------------------------------------------ |
 | `kairos reset` | Delete all data (with confirmation prompt) |
 
-## Default Project
+## Global Flags
 
-Every task must belong to a project. If you create a task without specifying a project, it is automatically assigned to the **General** project:
+These flags work with every command:
+
+| Flag               | Description                                             |
+| ------------------ | ------------------------------------------------------- |
+| `--config <path>`  | Use a custom database file instead of the default one   |
 
 ```bash
+# Use a separate DB for a work profile
+kairos --config ~/work.db start "Standup" -p "Meetings"
+
+# Use a separate DB for personal projects
+kairos --config ~/personal.db report
+```
+
+## Default Project
+
+Every task must belong to a project. If you omit `-p`, the **General** project is used:
+
+```bash
+# Create and start a task in General
 kairos create "Quick task"
-# Task "Quick task" created under project "General".
+kairos start "Quick task"
+
+# Create and start a task in a specific project
+kairos create "Deep work" -p "Research"
+kairos start "Deep work" -p "Research"
 ```
 
 ## Data Storage

@@ -116,9 +116,13 @@ func (s *Store) DeleteTask(name string) error {
 	return nil
 }
 
-// StartTask begins tracking time for the named task.
-// Only one task may be active at a time.
-func (s *Store) StartTask(name string) error {
+// StartTask begins tracking time for the named task within the given project.
+// If projectName is empty, "General" is used. Only one task may be active at a time.
+func (s *Store) StartTask(name, projectName string) error {
+	if projectName == "" {
+		projectName = "General"
+	}
+
 	active, err := s.GetActiveTask()
 	if err != nil {
 		return err
@@ -128,9 +132,23 @@ func (s *Store) StartTask(name string) error {
 	}
 
 	var taskID int
-	err = s.db.QueryRow("SELECT id FROM tasks WHERE name = ?", name).Scan(&taskID)
+	err = s.db.QueryRow(`
+		SELECT t.id FROM tasks t
+		JOIN projects p ON t.project_id = p.id
+		WHERE t.name = ? AND p.name = ?
+	`, name, projectName).Scan(&taskID)
 	if err == sql.ErrNoRows {
-		return fmt.Errorf("task %q not found; create it first with 'kairos create %q'", name, name)
+		// Give a more helpful hint if the task exists in a different project.
+		var otherProject string
+		_ = s.db.QueryRow(`
+			SELECT p.name FROM tasks t
+			JOIN projects p ON t.project_id = p.id
+			WHERE t.name = ? LIMIT 1
+		`, name).Scan(&otherProject)
+		if otherProject != "" {
+			return fmt.Errorf("task %q not found in project %q (it exists in project %q — use -p %q)", name, projectName, otherProject, otherProject)
+		}
+		return fmt.Errorf("task %q not found in project %q; create it first with 'kairos create %q -p %q'", name, projectName, name, projectName)
 	}
 	if err != nil {
 		return fmt.Errorf("could not find task: %w", err)
