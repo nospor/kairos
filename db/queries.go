@@ -155,9 +155,10 @@ func (s *Store) StartTask(name, projectName string) error {
 		return fmt.Errorf("could not find task: %w", err)
 	}
 
+	now := time.Now().Unix()
 	_, err = s.db.Exec(
-		"INSERT INTO time_entries (task_id, start_at) VALUES (?, ?)",
-		taskID, time.Now().Unix(),
+		"INSERT INTO time_entries (task_id, start_at, last_heartbeat) VALUES (?, ?, ?)",
+		taskID, now, now,
 	)
 	if err != nil {
 		return fmt.Errorf("could not start tracking: %w", err)
@@ -465,5 +466,126 @@ func (s *Store) RenameTask(oldName, newName, projectName string) error {
 		return fmt.Errorf("task %q not found in project %q", oldName, projectName)
 	}
 	return nil
+}
+
+// UpdateActiveHeartbeat updates the last_heartbeat timestamp of the currently active task.
+func (s *Store) UpdateActiveHeartbeat() error {
+	_, err := s.db.Exec("UPDATE time_entries SET last_heartbeat = ? WHERE stop_at IS NULL", time.Now().Unix())
+	if err != nil {
+		return fmt.Errorf("could not update heartbeat: %w", err)
+	}
+	return nil
+}
+
+// AutoStopStaleTasks checks for any active time entry whose last_heartbeat is stale (older than threshold).
+// It stops them at the last_heartbeat time (or start_at if last_heartbeat is NULL).
+func (s *Store) AutoStopStaleTasks(threshold time.Duration) (int, error) {
+	rows, err := s.db.Query("SELECT id, start_at, last_heartbeat FROM time_entries WHERE stop_at IS NULL")
+	if err != nil {
+		return 0, fmt.Errorf("could not query active entries for cleanup: %w", err)
+	}
+	defer rows.Close()
+
+	type staleEntry struct {
+		id            int
+		startAt       int64
+		lastHeartbeat *int64
+	}
+
+	var stale []staleEntry
+	now := time.Now().Unix()
+
+	for rows.Next() {
+		var id int
+		var startAt int64
+		var lastHeartbeat sql.NullInt64
+		if err := rows.Scan(&id, &startAt, &lastHeartbeat); err != nil {
+			return 0, fmt.Errorf("could not scan active entry: %w", err)
+		}
+
+		isStale := false
+		if lastHeartbeat.Valid {
+			if now-lastHeartbeat.Int64 >= int64(threshold.Seconds()) {
+				isStale = true
+			}
+		} else {
+			if now-startAt >= int64(threshold.Seconds()) {
+				isStale = true
+			}
+		}
+
+		if isStale {
+			var lh *int64
+			if lastHeartbeat.Valid {
+				val := lastHeartbeat.Int64
+				lh = &val
+			}
+			stale = append(stale, staleEntry{
+				id:            id,
+				startAt:       startAt,
+				lastHeartbeat: lh,
+			})
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return 0, err
+	}
+
+	stoppedCount := 0
+	for _, entry := range stale {
+		var stopTime int64
+		if entry.lastHeartbeat != nil && *entry.lastHeartbeat >= entry.startAt {
+			stopTime = *entry.lastHeartbeat
+		} else {
+			stopTime = entry.startAt
+		}
+
+		_, err := s.db.Exec("UPDATE time_entries SET stop_at = ? WHERE id = ?", stopTime, entry.id)
+		if err != nil {
+			return stoppedCount, fmt.Errorf("could not stop stale entry %d: %w", entry.id, err)
+		}
+		stoppedCount++
+	}
+
+	return stoppedCount, nil
+}
+
+// RunDaemon runs a loop that updates the active task's heartbeat periodically.
+// If it detects a system sleep or shutdown (i.e. ticker interval exceeded), it stops the active task.
+func (s *Store) RunDaemon() error {
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			active, err := s.GetActiveTask()
+			if err != nil {
+				return err
+			}
+			if active == nil {
+				return nil
+			}
+
+			var lastHeartbeat sql.NullInt64
+			err = s.db.QueryRow("SELECT last_heartbeat FROM time_entries WHERE stop_at IS NULL").Scan(&lastHeartbeat)
+			if err != nil {
+				return err
+			}
+
+			if lastHeartbeat.Valid {
+				timeSinceLastHeartbeat := time.Now().Unix() - lastHeartbeat.Int64
+				if timeSinceLastHeartbeat > 120 { // 2 minutes
+					_, err = s.db.Exec("UPDATE time_entries SET stop_at = ? WHERE stop_at IS NULL", lastHeartbeat.Int64)
+					return err
+				}
+			}
+
+			err = s.UpdateActiveHeartbeat()
+			if err != nil {
+				return err
+			}
+		}
+	}
 }
 

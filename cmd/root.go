@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/nospor/kairos/db"
 	"github.com/spf13/cobra"
@@ -23,6 +24,10 @@ generate reports, and export data to CSV.`,
 		store, err = db.New(configFlag)
 		if err != nil {
 			return fmt.Errorf("failed to initialise database: %w", err)
+		}
+
+		if cmd.Name() != "daemon" {
+			_, _ = store.AutoStopStaleTasks(2 * time.Minute)
 		}
 		return nil
 	},

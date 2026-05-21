@@ -67,16 +67,20 @@ func (s *Store) migrate() error {
 	);
 
 	CREATE TABLE IF NOT EXISTS time_entries (
-		id       INTEGER PRIMARY KEY AUTOINCREMENT,
-		task_id  INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
-		start_at DATETIME NOT NULL,
-		stop_at  DATETIME
+		id             INTEGER PRIMARY KEY AUTOINCREMENT,
+		task_id        INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+		start_at       DATETIME NOT NULL,
+		stop_at        DATETIME,
+		last_heartbeat DATETIME
 	);
 	`
 
 	if _, err := s.db.Exec(schema); err != nil {
 		return err
 	}
+
+	// For existing databases, try to add the column if it doesn't exist
+	_, _ = s.db.Exec("ALTER TABLE time_entries ADD COLUMN last_heartbeat DATETIME")
 
 	// Ensure the default "General" project exists.
 	_, err := s.db.Exec(`INSERT OR IGNORE INTO projects (name) VALUES ('General')`)
