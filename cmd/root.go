@@ -11,10 +11,12 @@ import (
 
 var store *db.Store
 var configFlag string
+var Version = "dev"
 
 var rootCmd = &cobra.Command{
-	Use:   "kairos",
-	Short: "A CLI time tracker",
+	Use:     "kairos",
+	Short:   "A CLI time tracker",
+	Version: Version,
 	Long: `Kairos is a command-line time tracking application.
 
 It helps you track time spent on tasks organised by projects,

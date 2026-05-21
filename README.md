@@ -4,6 +4,14 @@ A command-line time tracking application written in Go. Track time spent on task
 
 ## Installation
 
+### Pre-built binaries
+
+Pre-compiled binaries for Linux, macOS, and Windows are available on the [GitHub Releases](https://github.com/nospor/kairos/releases) page. 
+
+1. Download the archive for your operating system and architecture.
+2. Extract the archive.
+3. Move the binary to a folder in your `PATH` (e.g. `/usr/local/bin` on Linux/macOS).
+
 ### From source
 
 ```bash
