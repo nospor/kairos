@@ -1,9 +1,13 @@
 
-## [unreleased]
+## [1.1.1] - 2026-05-21
 
 ### Bug Fixes
 
 - Prevent tracking tasks after system shutdown ([#1](https://github.com/nospor/kairos/issues/1))
+
+### Miscellaneous Tasks
+
+- Setup testing, release pipelines, and changelog automation
 
 ## [1.1] - 2026-05-06
 
