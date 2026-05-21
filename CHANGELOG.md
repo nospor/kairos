@@ -8,6 +8,8 @@
 ### Miscellaneous Tasks
 
 - Setup testing, release pipelines, and changelog automation
+- Update CHANGELOG.md for v1.1.1 [skip ci]
+- Ignore GoReleaser artifacts and release notes
 
 ## [1.1] - 2026-05-06
 
