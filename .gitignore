@@ -9,3 +9,7 @@ report.csv
 .idea/
 .vscode/
 spec.md
+
+# GoReleaser
+dist/
+RELEASE_NOTES.md
