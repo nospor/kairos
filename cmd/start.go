@@ -2,6 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
+	"syscall"
 
 	"github.com/spf13/cobra"
 )
@@ -24,8 +27,30 @@ Without -p, the task is looked up in the default "General" project.`,
 			projectName = "General"
 		}
 		fmt.Printf("Started tracking time for task %q (project: %q).\n", taskName, projectName)
+		
+		// Spawn the daemon in the background to track heartbeat
+		startDaemon()
+		
 		return nil
 	},
+}
+
+func startDaemon() {
+	args := []string{}
+	if configFlag != "" {
+		args = append(args, "--config", configFlag)
+	}
+	args = append(args, "daemon")
+
+	cmd := exec.Command(os.Args[0], args...)
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	cmd.Stdin = nil
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Setsid: true,
+	}
+
+	_ = cmd.Start()
 }
 
 func init() {
