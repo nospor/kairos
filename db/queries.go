@@ -731,4 +731,3 @@ func (s *Store) LogTimeEntry(taskName, projectName string, startAt, stopAt time.
 	}
 	return nil
 }
-

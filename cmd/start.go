@@ -85,15 +85,15 @@ If no task name is provided, an interactive prompt will list all available tasks
 		if err := store.StartTask(taskName, projectName); err != nil {
 			return err
 		}
-		
+
 		if projectName == "" {
 			projectName = "General"
 		}
 		fmt.Printf("Started tracking time for task %q (project: %q).\n", taskName, projectName)
-		
+
 		// Spawn the daemon in the background to track heartbeat and notifications
 		startDaemon(startNotifyFlag)
-		
+
 		return nil
 	},
 }
