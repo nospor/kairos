@@ -10,6 +10,8 @@
 - Update CHANGELOG.md for v1.1.1 [skip ci]
 - Include commit descriptions in changelog and fix release pipeline conflict
 - Clean workspace before rebasing in release workflow
+- Update CHANGELOG.md for v1.2.1 [skip ci]
+- Migrate deprecated goreleaser format fields
 
 ## [1.2.0] - 2026-05-25
 
