@@ -86,10 +86,10 @@ kairos report
 
 ### Time Tracking
 
-| Command                              | Description                                 |
-| ------------------------------------ | ------------------------------------------- |
-| `kairos start "Task" [-p "Project"]` | Start tracking a task (defaults to General) |
-| `kairos stop`                        | Stop tracking the currently active task     |
+| Command                                            | Description                                 |
+| -------------------------------------------------- | ------------------------------------------- |
+| `kairos start "Task" [-p "Project"] [--notify N]`  | Start tracking a task (defaults to General) and optionally send a desktop notification every `N` minutes |
+| `kairos stop`                                      | Stop tracking the currently active task     |
 
 ### Reporting
 

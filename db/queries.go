@@ -3,6 +3,8 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"os/exec"
+	"runtime"
 	"strings"
 	"time"
 
@@ -552,9 +554,12 @@ func (s *Store) AutoStopStaleTasks(threshold time.Duration) (int, error) {
 
 // RunDaemon runs a loop that updates the active task's heartbeat periodically.
 // If it detects a system sleep or shutdown (i.e. ticker interval exceeded), it stops the active task.
-func (s *Store) RunDaemon() error {
+// If notifyMinutes > 0, it also sends desktop notifications every notifyMinutes.
+func (s *Store) RunDaemon(notifyMinutes int) error {
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
+
+	lastNotifiedMinutes := 0
 
 	for {
 		select {
@@ -585,7 +590,54 @@ func (s *Store) RunDaemon() error {
 			if err != nil {
 				return err
 			}
+
+			if notifyMinutes > 0 {
+				elapsed := time.Since(active.StartedAt)
+				elapsedMinutes := int(elapsed.Minutes())
+				if elapsedMinutes > 0 && elapsedMinutes%notifyMinutes == 0 && elapsedMinutes != lastNotifiedMinutes {
+					lastNotifiedMinutes = elapsedMinutes
+					title := "Kairos Time Tracker"
+					message := fmt.Sprintf("Still tracking task %q in project %q\nElapsed: %s", active.TaskName, active.ProjectName, formatDuration(elapsed))
+					sendNotification(title, message)
+				}
+			}
 		}
 	}
+}
+
+func sendNotification(title, message string) {
+	switch runtime.GOOS {
+	case "linux":
+		_ = exec.Command("notify-send", title, message).Run()
+	case "darwin":
+		escapedMsg := strings.ReplaceAll(message, `"`, `\"`)
+		escapedTitle := strings.ReplaceAll(title, `"`, `\"`)
+		script := fmt.Sprintf("display notification %q with title %q", escapedMsg, escapedTitle)
+		_ = exec.Command("osascript", "-e", script).Run()
+	case "windows":
+		escapedMsg := strings.ReplaceAll(message, `"`, "`\"")
+		escapedTitle := strings.ReplaceAll(title, `"`, "`\"")
+		psCmd := fmt.Sprintf(`$wshell = New-Object -ComObject Wscript.Shell; $wshell.Popup("%s", 0, "%s", 64)`, escapedMsg, escapedTitle)
+		_ = exec.Command("powershell", "-Command", psCmd).Run()
+	}
+}
+
+func formatDuration(d time.Duration) string {
+	totalSeconds := int(d.Seconds())
+	if totalSeconds < 0 {
+		totalSeconds = 0
+	}
+
+	hours := totalSeconds / 3600
+	minutes := (totalSeconds % 3600) / 60
+	seconds := totalSeconds % 60
+
+	if hours > 0 {
+		return fmt.Sprintf("%dh %dm", hours, minutes)
+	}
+	if minutes > 0 {
+		return fmt.Sprintf("%dm %ds", minutes, seconds)
+	}
+	return fmt.Sprintf("%ds", seconds)
 }
 

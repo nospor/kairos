@@ -9,6 +9,7 @@ import (
 )
 
 var startProjectFlag string
+var startNotifyFlag int
 
 var startCmd = &cobra.Command{
 	Use:   "start [task name]",
@@ -17,6 +18,10 @@ var startCmd = &cobra.Command{
 Without -p, the task is looked up in the default "General" project.`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if startNotifyFlag < 0 {
+			return fmt.Errorf("notification interval must be a non-negative number of minutes")
+		}
+
 		taskName := args[0]
 		if err := store.StartTask(taskName, startProjectFlag); err != nil {
 			return err
@@ -27,19 +32,22 @@ Without -p, the task is looked up in the default "General" project.`,
 		}
 		fmt.Printf("Started tracking time for task %q (project: %q).\n", taskName, projectName)
 		
-		// Spawn the daemon in the background to track heartbeat
-		startDaemon()
+		// Spawn the daemon in the background to track heartbeat and notifications
+		startDaemon(startNotifyFlag)
 		
 		return nil
 	},
 }
 
-func startDaemon() {
+func startDaemon(notifyMinutes int) {
 	args := []string{}
 	if configFlag != "" {
 		args = append(args, "--config", configFlag)
 	}
 	args = append(args, "daemon")
+	if notifyMinutes > 0 {
+		args = append(args, "--notify", fmt.Sprintf("%d", notifyMinutes))
+	}
 
 	cmd := exec.Command(os.Args[0], args...)
 	cmd.Stdout = nil
@@ -52,5 +60,6 @@ func startDaemon() {
 
 func init() {
 	startCmd.Flags().StringVarP(&startProjectFlag, "project", "p", "", `project the task belongs to (default: "General")`)
+	startCmd.Flags().IntVar(&startNotifyFlag, "notify", 0, "send a desktop notification every N minutes to remind you of the active task")
 	rootCmd.AddCommand(startCmd)
 }
