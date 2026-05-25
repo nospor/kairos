@@ -1,9 +1,15 @@
 
-## [unreleased]
+## [1.2.1] - 2026-05-25
+
+### Styling
+
+- Format start.go and queries.go with gofmt
 
 ### Miscellaneous Tasks
 
 - Update CHANGELOG.md for v1.1.1 [skip ci]
+- Include commit descriptions in changelog and fix release pipeline conflict
+- Clean workspace before rebasing in release workflow
 
 ## [1.2.0] - 2026-05-25
 
