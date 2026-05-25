@@ -97,6 +97,7 @@ kairos report
 | Command                          | Description                      |
 | -------------------------------- | -------------------------------- |
 | `kairos report [flags]`          | Display a report of tracked time |
+| `kairos history [flags]`         | Show chronological history of individual time entries |
 | `kairos export file.csv [flags]` | Export the report to CSV         |
 
 #### Report & Export Filtering Flags

@@ -50,3 +50,13 @@ type ActiveInfo struct {
 	ProjectName string
 	StartedAt   time.Time
 }
+
+// HistoryEntry represents a single tracked time entry.
+type HistoryEntry struct {
+	ID          int
+	ProjectName string
+	TaskName    string
+	StartAt     time.Time
+	StopAt      *time.Time
+	Duration    time.Duration
+}

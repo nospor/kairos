@@ -641,3 +641,48 @@ func formatDuration(d time.Duration) string {
 	return fmt.Sprintf("%ds", seconds)
 }
 
+// GetHistory returns individual time entries in reverse chronological order, optionally limited.
+func (s *Store) GetHistory(limit int) ([]model.HistoryEntry, error) {
+	query := `
+		SELECT te.id, p.name, t.name, te.start_at, te.stop_at
+		FROM time_entries te
+		JOIN tasks t ON te.task_id = t.id
+		JOIN projects p ON t.project_id = p.id
+		ORDER BY te.start_at DESC
+	`
+	var args []interface{}
+	if limit > 0 {
+		query += " LIMIT ?"
+		args = append(args, limit)
+	}
+
+	rows, err := s.db.Query(query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("could not query history: %w", err)
+	}
+	defer rows.Close()
+
+	var history []model.HistoryEntry
+	for rows.Next() {
+		var h model.HistoryEntry
+		var startUnix int64
+		var stopUnix sql.NullInt64
+
+		if err := rows.Scan(&h.ID, &h.ProjectName, &h.TaskName, &startUnix, &stopUnix); err != nil {
+			return nil, fmt.Errorf("could not scan history row: %w", err)
+		}
+
+		h.StartAt = time.Unix(startUnix, 0)
+		if stopUnix.Valid {
+			stopTime := time.Unix(stopUnix.Int64, 0)
+			h.StopAt = &stopTime
+			h.Duration = stopTime.Sub(h.StartAt)
+		} else {
+			h.Duration = time.Since(h.StartAt)
+		}
+
+		history = append(history, h)
+	}
+	return history, rows.Err()
+}
+
