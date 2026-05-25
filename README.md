@@ -89,7 +89,7 @@ kairos report
 
 | Command                                            | Description                                 |
 | -------------------------------------------------- | ------------------------------------------- |
-| `kairos start "Task" [-p "Project"] [--notify N]`  | Start tracking a task (defaults to General) and optionally send a desktop notification every `N` minutes |
+| `kairos start ["Task"] [-p "Project"] [--notify N]` | Start tracking a task (defaults to General) and optionally send a desktop notification every `N` minutes. If no task name is provided, you can choose from an interactive list. |
 | `kairos status [-w]`                               | Show details and elapsed time of the currently active task (optionally watch/live-update with `-w`) |
 | `kairos stop`                                      | Stop tracking the currently active task     |
 
