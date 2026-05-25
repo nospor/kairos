@@ -74,6 +74,7 @@ kairos report
 | `kairos edit "Task" "New" [-p "Proj"]`| Rename a task (defaults to "General" project) |
 | `kairos delete "Task"`                | Delete a task and its time entries            |
 | `kairos list`                         | List all tasks with their durations           |
+| `kairos add "Task" [-p "Proj"] [-d Dur \| -s Start -e End]` | Log a completed time entry retroactively (creates task if it doesn't exist) |
 
 ### Projects
 

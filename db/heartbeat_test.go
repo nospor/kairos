@@ -82,3 +82,46 @@ func TestHeartbeatAndCleanup(t *testing.T) {
 		t.Errorf("expected stop_at (%d) to equal last_heartbeat (%d)", stopAt.Int64, lastHeartbeat.Int64)
 	}
 }
+
+func TestLogTimeEntry(t *testing.T) {
+	store, err := New(":memory:")
+	if err != nil {
+		t.Fatalf("failed to create store: %v", err)
+	}
+	defer store.Close()
+
+	// 1. Log with non-existent project (should fail)
+	now := time.Now()
+	err = store.LogTimeEntry("New Task", "NonExistent", now.Add(-1*time.Hour), now)
+	if err == nil {
+		t.Error("expected error logging time for non-existent project, got nil")
+	}
+
+	// 2. Log with default project (should succeed and create task)
+	start := now.Add(-2 * time.Hour)
+	end := now.Add(-1 * time.Hour)
+	err = store.LogTimeEntry("Manual Task", "General", start, end)
+	if err != nil {
+		t.Fatalf("failed to log time entry: %v", err)
+	}
+
+	// Verify task was created
+	var taskCount int
+	err = store.db.QueryRow("SELECT COUNT(*) FROM tasks WHERE name = 'Manual Task'").Scan(&taskCount)
+	if err != nil {
+		t.Fatalf("failed to query tasks: %v", err)
+	}
+	if taskCount != 1 {
+		t.Errorf("expected 1 task created, got %d", taskCount)
+	}
+
+	// Verify time entry was created
+	var startUnix, stopUnix int64
+	err = store.db.QueryRow("SELECT start_at, stop_at FROM time_entries WHERE task_id = (SELECT id FROM tasks WHERE name = 'Manual Task')").Scan(&startUnix, &stopUnix)
+	if err != nil {
+		t.Fatalf("failed to query time entry: %v", err)
+	}
+	if startUnix != start.Unix() || stopUnix != end.Unix() {
+		t.Errorf("expected start %d and stop %d, got start %d and stop %d", start.Unix(), end.Unix(), startUnix, stopUnix)
+	}
+}

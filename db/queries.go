@@ -686,3 +686,49 @@ func (s *Store) GetHistory(limit int) ([]model.HistoryEntry, error) {
 	return history, rows.Err()
 }
 
+// LogTimeEntry manually inserts a time entry.
+// It resolves the task (creating it if it doesn't exist under the given project).
+func (s *Store) LogTimeEntry(taskName, projectName string, startAt, stopAt time.Time) error {
+	if projectName == "" {
+		projectName = "General"
+	}
+
+	// Verify project exists
+	var projectID int
+	err := s.db.QueryRow("SELECT id FROM projects WHERE name = ?", projectName).Scan(&projectID)
+	if err == sql.ErrNoRows {
+		return fmt.Errorf("project %q not found", projectName)
+	}
+	if err != nil {
+		return fmt.Errorf("could not find project: %w", err)
+	}
+
+	// Find or create task
+	var taskID int
+	err = s.db.QueryRow("SELECT id FROM tasks WHERE name = ? AND project_id = ?", taskName, projectID).Scan(&taskID)
+	if err == sql.ErrNoRows {
+		// Create task
+		res, err := s.db.Exec("INSERT INTO tasks (name, project_id) VALUES (?, ?)", taskName, projectID)
+		if err != nil {
+			return fmt.Errorf("could not create task %q: %w", taskName, err)
+		}
+		lastID, err := res.LastInsertId()
+		if err != nil {
+			return fmt.Errorf("could not get created task ID: %w", err)
+		}
+		taskID = int(lastID)
+	} else if err != nil {
+		return fmt.Errorf("could not lookup task: %w", err)
+	}
+
+	// Insert time entry
+	_, err = s.db.Exec(
+		"INSERT INTO time_entries (task_id, start_at, stop_at, last_heartbeat) VALUES (?, ?, ?, ?)",
+		taskID, startAt.Unix(), stopAt.Unix(), stopAt.Unix(),
+	)
+	if err != nil {
+		return fmt.Errorf("could not log time entry: %w", err)
+	}
+	return nil
+}
+
