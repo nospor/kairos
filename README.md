@@ -88,6 +88,7 @@ kairos tui
 * Scrollable table of recent time entries with dynamically adjusting columns to fit any terminal size.
 * Quick actions:
   * `↑` / `↓` (or `k` / `j`): Scroll list.
+  * `u`: **Update time** of the selected entry via a duration input modal.
   * `d` / `backspace`: Delete the selected time entry (requires confirmation).
   * `enter`: Restart tracking this task.
 
@@ -103,12 +104,12 @@ kairos tui
 
 ### Tasks
 
-| Command                               | Description                                   |
-| ------------------------------------- | --------------------------------------------- |
-| `kairos create "Task" [-p "Project"]` | Create a task (defaults to "General" project) |
-| `kairos edit "Task" "New" [-p "Proj"]`| Rename a task (defaults to "General" project) |
-| `kairos delete "Task"`                | Delete a task and its time entries            |
-| `kairos list`                         | List all tasks with their durations           |
+| Command                                                     | Description                                                                 |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `kairos create "Task" [-p "Project"]`                       | Create a task (defaults to "General" project)                               |
+| `kairos edit "Task" "New" [-p "Proj"]`                      | Rename a task (defaults to "General" project)                               |
+| `kairos delete "Task"`                                      | Delete a task and its time entries                                          |
+| `kairos list`                                               | List all tasks with their durations                                         |
 | `kairos add "Task" [-p "Proj"] [-d Dur \| -s Start -e End]` | Log a completed time entry retroactively (creates task if it doesn't exist) |
 
 ### Projects
@@ -122,39 +123,40 @@ kairos tui
 
 ### Time Tracking
 
-| Command                                            | Description                                 |
-| -------------------------------------------------- | ------------------------------------------- |
+| Command                                             | Description                                                                                                                                                                     |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `kairos start ["Task"] [-p "Project"] [--notify N]` | Start tracking a task (defaults to General) and optionally send a desktop notification every `N` minutes. If no task name is provided, you can choose from an interactive list. |
-| `kairos status [-w]`                               | Show details and elapsed time of the currently active task (optionally watch/live-update with `-w`) |
-| `kairos stop`                                      | Stop tracking the currently active task     |
-| `kairos dashboard` (alias: `tui`)                  | Start the interactive terminal user interface (TUI) dashboard to manage tasks, projects, and history. |
+| `kairos status [-w]`                                | Show details and elapsed time of the currently active task (optionally watch/live-update with `-w`)                                                                             |
+| `kairos stop`                                       | Stop tracking the currently active task                                                                                                                                         |
+| `kairos update <id> [-d Dur \| -s Start -e End]`    | Update the duration, start time, or end time of a specific time entry.                                                                                                          |
+| `kairos dashboard` (alias: `tui`)                   | Start the interactive terminal user interface (TUI) dashboard to manage tasks, projects, and history.                                                                           |
 
 ### Reporting
 
-| Command                          | Description                      |
-| -------------------------------- | -------------------------------- |
-| `kairos report [flags]`          | Display a report of tracked time |
+| Command                          | Description                                           |
+| -------------------------------- | ----------------------------------------------------- |
+| `kairos report [flags]`          | Display a report of tracked time                      |
 | `kairos history [flags]`         | Show chronological history of individual time entries |
-| `kairos export file.csv [flags]` | Export the report to CSV         |
+| `kairos export file.csv [flags]` | Export the report to CSV                              |
 
 #### Report & Export Filtering Flags
 
-| Flag                  | Description                             |
-| --------------------- | --------------------------------------- |
-| `--project "Name"`    | Filter by project                       |
-| `--today`             | Show only today's entries               |
-| `--week`              | Show only this week's entries (Mon–Sun) |
-| `--month`             | Show only this month's entries          |
-| `--from "YYYY-MM-DD"` | Show entries starting from this date    |
-| `--to "YYYY-MM-DD"`   | Show entries up to this date            |
+| Flag                  | Description                                     |
+| --------------------- | ----------------------------------------------- |
+| `--project "Name"`    | Filter by project                               |
+| `--today`             | Show only today's entries                       |
+| `--week`              | Show only this week's entries (Mon–Sun)         |
+| `--month`             | Show only this month's entries                  |
+| `--from "YYYY-MM-DD"` | Show entries starting from this date            |
+| `--to "YYYY-MM-DD"`   | Show entries up to this date                    |
 | `--group-by "period"` | Group data by `day`, `week`, `month`, or `year` |
 
 #### History Flags
 
-| Flag                      | Description                             |
-| ------------------------- | --------------------------------------- |
-| `--limit`, `-n`           | Limit the number of history entries displayed |
-| `--longer-than`, `-d`     | Only show entries longer than a specific duration (e.g. `15m`, `1h30m`) |
+| Flag                  | Description                                                             |
+| --------------------- | ----------------------------------------------------------------------- |
+| `--limit`, `-n`       | Limit the number of history entries displayed                           |
+| `--longer-than`, `-d` | Only show entries longer than a specific duration (e.g. `15m`, `1h30m`) |
 
 **Examples:**
 
