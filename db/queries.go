@@ -641,16 +641,27 @@ func formatDuration(d time.Duration) string {
 	return fmt.Sprintf("%ds", seconds)
 }
 
-// GetHistory returns individual time entries in reverse chronological order, optionally limited.
-func (s *Store) GetHistory(limit int) ([]model.HistoryEntry, error) {
+// GetHistoryFiltered returns individual time entries in reverse chronological order, filtered by minimum duration, and optionally limited.
+func (s *Store) GetHistoryFiltered(limit int, minDuration time.Duration) ([]model.HistoryEntry, error) {
 	query := `
 		SELECT te.id, p.name, t.name, te.start_at, te.stop_at
 		FROM time_entries te
 		JOIN tasks t ON te.task_id = t.id
 		JOIN projects p ON t.project_id = p.id
-		ORDER BY te.start_at DESC
 	`
 	var args []interface{}
+	if minDuration > 0 {
+		minSec := int64(minDuration.Seconds())
+		nowSec := time.Now().Unix()
+		query += ` WHERE (
+			(te.stop_at IS NOT NULL AND (te.stop_at - te.start_at) >= ?) OR
+			(te.stop_at IS NULL AND (? - te.start_at) >= ?)
+		)`
+		args = append(args, minSec, nowSec, minSec)
+	}
+
+	query += " ORDER BY te.start_at DESC"
+
 	if limit > 0 {
 		query += " LIMIT ?"
 		args = append(args, limit)
@@ -684,6 +695,11 @@ func (s *Store) GetHistory(limit int) ([]model.HistoryEntry, error) {
 		history = append(history, h)
 	}
 	return history, rows.Err()
+}
+
+// GetHistory returns individual time entries in reverse chronological order, optionally limited.
+func (s *Store) GetHistory(limit int) ([]model.HistoryEntry, error) {
+	return s.GetHistoryFiltered(limit, 0)
 }
 
 // LogTimeEntry manually inserts a time entry.

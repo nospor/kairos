@@ -235,4 +235,77 @@ func TestUpdateTimeEntry(t *testing.T) {
 	}
 }
 
+func TestGetHistoryFiltered(t *testing.T) {
+	store, err := New(":memory:")
+	if err != nil {
+		t.Fatalf("failed to create store: %v", err)
+	}
+	defer store.Close()
+
+	now := time.Now()
+	// Entry 1: 5 minutes long (completed)
+	err = store.LogTimeEntry("Short Task", "General", now.Add(-10*time.Minute), now.Add(-5*time.Minute))
+	if err != nil {
+		t.Fatalf("failed to log short task: %v", err)
+	}
+
+	// Entry 2: 1 hour long (completed)
+	err = store.LogTimeEntry("Long Task", "General", now.Add(-2*time.Hour), now.Add(-1*time.Hour))
+	if err != nil {
+		t.Fatalf("failed to log long task: %v", err)
+	}
+
+	// Entry 3: active, started 2 hours ago (so duration is 2 hours)
+	err = store.CreateTask("Active Long Task", "General")
+	if err != nil {
+		t.Fatalf("failed to create task: %v", err)
+	}
+	err = store.StartTask("Active Long Task", "General")
+	if err != nil {
+		t.Fatalf("failed to start task: %v", err)
+	}
+	// We need to manipulate start_at of the active task to make it 2 hours ago.
+	// Since StartTask inserts the current time, let's update it in the DB.
+	_, err = store.db.Exec("UPDATE time_entries SET start_at = ? WHERE stop_at IS NULL", now.Add(-2*time.Hour).Unix())
+	if err != nil {
+		t.Fatalf("failed to update start_at for active task: %v", err)
+	}
+
+	// 1. Get history without duration filter
+	hist, err := store.GetHistoryFiltered(0, 0)
+	if err != nil {
+		t.Fatalf("failed to get history: %v", err)
+	}
+	if len(hist) != 3 {
+		t.Errorf("expected 3 history entries, got %d", len(hist))
+	}
+
+	// 2. Get history filtered by duration longer than 30 minutes (should return the 1h completed task and the 2h active task)
+	hist, err = store.GetHistoryFiltered(0, 30*time.Minute)
+	if err != nil {
+		t.Fatalf("failed to get history with filter: %v", err)
+	}
+	if len(hist) != 2 {
+		t.Errorf("expected 2 history entries longer than 30m, got %d", len(hist))
+	}
+	for _, entry := range hist {
+		if entry.TaskName == "Short Task" {
+			t.Errorf("did not expect Short Task in results, but got it")
+		}
+	}
+
+	// 3. Get history filtered by duration longer than 1h30m (should return only the 2h active task)
+	hist, err = store.GetHistoryFiltered(0, 90*time.Minute)
+	if err != nil {
+		t.Fatalf("failed to get history with filter: %v", err)
+	}
+	if len(hist) != 1 {
+		t.Errorf("expected 1 history entry longer than 90m, got %d", len(hist))
+	}
+	if hist[0].TaskName != "Active Long Task" {
+		t.Errorf("expected Active Long Task, got %s", hist[0].TaskName)
+	}
+}
+
+
 

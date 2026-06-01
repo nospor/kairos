@@ -5,20 +5,32 @@ import (
 	"os"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	"github.com/spf13/cobra"
 )
 
 var historyLimitFlag int
+var historyLongerThanFlag string
 
 var historyCmd = &cobra.Command{
 	Use:   "history",
 	Short: "Show chronological history of individual time entries",
 	Long: `Display a list of individual time entries, starting with the most recent.
-Use the --limit (-n) flag to restrict the number of entries shown.`,
+Use the --limit (-n) flag to restrict the number of entries shown.
+Use the --longer-than (-d) flag to only show entries longer than a specific duration (e.g. 15m, 1h30m).`,
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		history, err := store.GetHistory(historyLimitFlag)
+		var minDuration time.Duration
+		var err error
+		if historyLongerThanFlag != "" {
+			minDuration, err = time.ParseDuration(historyLongerThanFlag)
+			if err != nil {
+				return fmt.Errorf("invalid duration format %q: %w (e.g. 1h30m, 45m)", historyLongerThanFlag, err)
+			}
+		}
+
+		history, err := store.GetHistoryFiltered(historyLimitFlag, minDuration)
 		if err != nil {
 			return err
 		}
@@ -47,5 +59,6 @@ Use the --limit (-n) flag to restrict the number of entries shown.`,
 
 func init() {
 	historyCmd.Flags().IntVarP(&historyLimitFlag, "limit", "n", 0, "limit the number of history entries displayed")
+	historyCmd.Flags().StringVarP(&historyLongerThanFlag, "longer-than", "d", "", "only show entries longer than a specific duration (e.g. 15m, 1h30m)")
 	rootCmd.AddCommand(historyCmd)
 }

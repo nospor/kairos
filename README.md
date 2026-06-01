@@ -149,6 +149,13 @@ kairos tui
 | `--to "YYYY-MM-DD"`   | Show entries up to this date            |
 | `--group-by "period"` | Group data by `day`, `week`, `month`, or `year` |
 
+#### History Flags
+
+| Flag                      | Description                             |
+| ------------------------- | --------------------------------------- |
+| `--limit`, `-n`           | Limit the number of history entries displayed |
+| `--longer-than`, `-d`     | Only show entries longer than a specific duration (e.g. `15m`, `1h30m`) |
+
 **Examples:**
 
 ```bash
@@ -166,6 +173,12 @@ kairos report --group-by month
 
 # Export this week's data grouped by day
 kairos export weekly.csv --week --group-by day
+
+# Show history entries longer than 15 minutes
+kairos history --longer-than 15m
+
+# Show the last 5 history entries longer than 1 hour
+kairos history -d 1h -n 5
 ```
 
 ### Data Management
