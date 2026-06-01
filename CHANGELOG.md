@@ -1,4 +1,16 @@
 
+## [1.2.2] - 2026-06-01
+
+### Features
+
+- *(tui)* Add interactive dashboard command and shortcut alias
+- Add update command and TUI modal to modify task time entries
+- *(history)* Add duration filtering to history command
+
+### Miscellaneous Tasks
+
+- Update CHANGELOG.md for v1.2.1 [skip ci]
+
 ## [1.2.1] - 2026-05-25
 
 ### Styling
