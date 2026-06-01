@@ -1,4 +1,20 @@
 
+## [1.2.4] - 2026-06-01
+
+### Bug Fixes
+
+- Fixing ci
+
+### Miscellaneous Tasks
+
+- Update CHANGELOG.md for v1.2.2 [skip ci]
+
+## [1.2.3] - 2026-06-01
+
+### Bug Fixes
+
+- File formats
+
 ## [1.2.2] - 2026-06-01
 
 ### Features
