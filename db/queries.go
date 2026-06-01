@@ -811,5 +811,3 @@ func (s *Store) UpdateTimeEntry(id int, startAt time.Time, stopAt *time.Time) er
 	}
 	return nil
 }
-
-

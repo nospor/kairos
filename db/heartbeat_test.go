@@ -306,6 +306,3 @@ func TestGetHistoryFiltered(t *testing.T) {
 		t.Errorf("expected Active Long Task, got %s", hist[0].TaskName)
 	}
 }
-
-
-

@@ -71,27 +71,27 @@ func tickCmd() tea.Cmd {
 
 // mainModel holds the TUI application state
 type mainModel struct {
-	activeTab      tabId
-	activeTask     *model.ActiveInfo
-	projects       []model.ProjectInfo
-	history        []model.HistoryEntry
+	activeTab  tabId
+	activeTask *model.ActiveInfo
+	projects   []model.ProjectInfo
+	history    []model.HistoryEntry
 
 	// Cursors
-	projectCursor  int
-	taskCursor     int
-	historyCursor  int
+	projectCursor int
+	taskCursor    int
+	historyCursor int
 
 	// Pagination/Scroll offsets
-	historyOffset  int
-	historyLimit   int
+	historyOffset int
+	historyLimit  int
 
 	// Focus pane on Tab 2
-	activePane     activePane
+	activePane activePane
 
 	// Modal prompt state
-	modal          modalType
-	input          textinput.Model
-	startTaskName  string // Temp wizard state
+	modal         modalType
+	input         textinput.Model
+	startTaskName string // Temp wizard state
 
 	// Project/Task Select values for Wizard
 	projectSelectCursor int
@@ -101,13 +101,13 @@ type mainModel struct {
 	selectedProj        string
 
 	// Notifications
-	errorMsg       string
-	successMsg     string
-	msgExpiry      time.Time
+	errorMsg   string
+	successMsg string
+	msgExpiry  time.Time
 
 	// Viewport size
-	width          int
-	height         int
+	width  int
+	height int
 }
 
 func initialModel() mainModel {
@@ -116,11 +116,11 @@ func initialModel() mainModel {
 	ti.Focus()
 
 	return mainModel{
-		activeTab:     tabDashboard,
-		activePane:    paneProjects,
-		modal:         modalNone,
-		input:         ti,
-		historyLimit:  15,
+		activeTab:    tabDashboard,
+		activePane:   paneProjects,
+		modal:        modalNone,
+		input:        ti,
+		historyLimit: 15,
 	}
 }
 
@@ -742,9 +742,9 @@ var (
 			MarginRight(2)
 
 	styleTabInactive = lipgloss.NewStyle().
-			Foreground(colorGray).
-			Padding(0, 1).
-			MarginRight(2)
+				Foreground(colorGray).
+				Padding(0, 1).
+				MarginRight(2)
 
 	styleBox = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
@@ -943,7 +943,7 @@ func (m mainModel) drawProjects() string {
 				// Subtract prefix (2 chars), spacing (2 chars), and duration string length
 				taskNameMaxLen := max(10, rightInnerWidth-2-2-len(durStr))
 				taskNameTruncated := truncateString(task.TaskName, taskNameMaxLen)
-				
+
 				line := fmt.Sprintf("%-*s  %s", taskNameMaxLen, taskNameTruncated, durStr)
 				if i == m.taskCursor {
 					if m.activePane == paneTasks {
@@ -1086,7 +1086,7 @@ func (m mainModel) drawModal() string {
 		end := min(len(m.taskSelectNames), offset+limit)
 		for i := offset; i < end; i++ {
 			task := m.taskSelectNames[i]
-			
+
 			var lineStyle lipgloss.Style
 			if i == m.taskSelectCursor {
 				lineStyle = styleSelected.Width(35)
@@ -1095,12 +1095,12 @@ func (m mainModel) drawModal() string {
 			} else {
 				lineStyle = styleNormal
 			}
-			
+
 			prefix := "  "
 			if i == m.taskSelectCursor {
 				prefix = "> "
 			}
-			
+
 			sb.WriteString(lineStyle.Render(prefix+task) + "\n")
 		}
 		content.WriteString(sb.String())
