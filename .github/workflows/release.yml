@@ -52,11 +52,13 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          cp CHANGELOG.md /tmp/CHANGELOG.md
+          git fetch origin main
+          git checkout -B main origin/main
+          cp /tmp/CHANGELOG.md CHANGELOG.md
           git add CHANGELOG.md
           if ! git diff --cached --quiet; then
             git commit -m "chore: update CHANGELOG.md for ${{ github.ref_name }} [skip ci]"
-            git reset --hard
-            git fetch origin main
-            git rebase origin/main
-            git push origin HEAD:main
+            git push origin main
           fi
+
