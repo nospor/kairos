@@ -57,6 +57,7 @@ const (
 	modalConfirmDeleteProj
 	modalConfirmDeleteTask
 	modalConfirmDeleteEntry
+	modalUpdateEntryTime
 )
 
 // tickMsg is sent periodically to update time and poll database
@@ -387,6 +388,38 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 							startDaemon(0)
 						}
 					}
+				case modalUpdateEntryTime:
+					if val == "" {
+						m.setError("Duration cannot be empty.")
+					} else {
+						duration, err := time.ParseDuration(val)
+						if err != nil {
+							m.setError(fmt.Sprintf("Invalid duration: %v", err))
+						} else if duration <= 0 {
+							m.setError("Duration must be positive.")
+						} else {
+							h := m.history[m.historyCursor]
+							entry, err := store.GetTimeEntry(h.ID)
+							if err != nil {
+								m.setError(err.Error())
+							} else {
+								startAt := entry.StartAt
+								var stopAt *time.Time
+								if entry.StopAt != nil {
+									t := entry.StartAt.Add(duration)
+									stopAt = &t
+								} else {
+									startAt = time.Now().Add(-duration)
+								}
+
+								if err := store.UpdateTimeEntry(h.ID, startAt, stopAt); err != nil {
+									m.setError(err.Error())
+								} else {
+									m.setSuccess("Time entry updated successfully.")
+								}
+							}
+						}
+					}
 				}
 				m.modal = modalNone
 				m.input.Blur()
@@ -631,6 +664,16 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else if m.activeTab == tabHistory {
 				if len(m.history) > 0 {
 					m.modal = modalConfirmDeleteEntry
+				}
+			}
+
+		case "u":
+			if m.activeTab == tabHistory {
+				if len(m.history) > 0 {
+					m.input.SetValue(m.history[m.historyCursor].Duration.Round(time.Second).String())
+					m.input.Focus()
+					m.modal = modalUpdateEntryTime
+					m.input.Prompt = "Duration (e.g. 1h30m, 45m): "
 				}
 			}
 
@@ -1083,6 +1126,12 @@ func (m mainModel) drawModal() string {
 		h := m.history[m.historyCursor]
 		content.WriteString(fmt.Sprintf("Delete entry for %q (%s)?\n\n", h.TaskName, formatDuration(h.Duration)))
 		content.WriteString(styleNormal.Render("Press [Y] to delete  •  [N] or Esc to cancel"))
+	case modalUpdateEntryTime:
+		title = "Update Time Entry Duration"
+		h := m.history[m.historyCursor]
+		content.WriteString(fmt.Sprintf("Task:    %s\nProject: %s\n\n", h.TaskName, h.ProjectName))
+		content.WriteString(m.input.View() + "\n\n")
+		content.WriteString(styleMuted.Render("Enter to confirm  •  Esc to cancel"))
 	}
 
 	body := fmt.Sprintf("%s\n\n%s", lipgloss.NewStyle().Bold(true).Foreground(colorPink).Render(title), content.String())
@@ -1124,6 +1173,7 @@ func (m mainModel) drawHelp() string {
 	case tabHistory:
 		addKey("↑/↓", "Scroll")
 		if len(m.history) > 0 {
+			addKey("u", "Update Time")
 			addKey("d/del", "Delete Entry")
 			addKey("enter", "Restart Track")
 		}

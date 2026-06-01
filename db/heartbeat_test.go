@@ -171,3 +171,68 @@ func TestDeleteTimeEntry(t *testing.T) {
 	}
 }
 
+func TestUpdateTimeEntry(t *testing.T) {
+	store, err := New(":memory:")
+	if err != nil {
+		t.Fatalf("failed to create store: %v", err)
+	}
+	defer store.Close()
+
+	now := time.Now().Truncate(time.Second) // SQLite dates are stored at second precision
+	err = store.LogTimeEntry("Update Me Task", "General", now.Add(-2*time.Hour), now.Add(-1*time.Hour))
+	if err != nil {
+		t.Fatalf("failed to log time entry: %v", err)
+	}
+
+	history, err := store.GetHistory(0)
+	if err != nil {
+		t.Fatalf("failed to get history: %v", err)
+	}
+	if len(history) != 1 {
+		t.Fatalf("expected 1 history entry, got %d", len(history))
+	}
+	entryID := history[0].ID
+
+	// Fetch it
+	entry, err := store.GetTimeEntry(entryID)
+	if err != nil {
+		t.Fatalf("failed to get time entry: %v", err)
+	}
+	if entry.StartAt.Unix() != now.Add(-2*time.Hour).Unix() {
+		t.Errorf("expected start %v, got %v", now.Add(-2*time.Hour), entry.StartAt)
+	}
+
+	// Update it
+	newStart := now.Add(-4 * time.Hour)
+	newStop := now.Add(-2 * time.Hour)
+	err = store.UpdateTimeEntry(entryID, newStart, &newStop)
+	if err != nil {
+		t.Fatalf("failed to update time entry: %v", err)
+	}
+
+	// Verify update
+	entry, err = store.GetTimeEntry(entryID)
+	if err != nil {
+		t.Fatalf("failed to get time entry: %v", err)
+	}
+	if entry.StartAt.Unix() != newStart.Unix() {
+		t.Errorf("expected updated start %v, got %v", newStart, entry.StartAt)
+	}
+	if entry.StopAt == nil || entry.StopAt.Unix() != newStop.Unix() {
+		t.Errorf("expected updated stop %v, got %v", newStop, entry.StopAt)
+	}
+
+	// Try fetching non-existent ID
+	_, err = store.GetTimeEntry(9999)
+	if err == nil {
+		t.Error("expected error fetching non-existent time entry, got nil")
+	}
+
+	// Try updating non-existent ID
+	err = store.UpdateTimeEntry(9999, newStart, &newStop)
+	if err == nil {
+		t.Error("expected error updating non-existent time entry, got nil")
+	}
+}
+
+

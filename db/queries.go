@@ -745,3 +745,55 @@ func (s *Store) DeleteTimeEntry(id int) error {
 	return nil
 }
 
+// GetTimeEntry returns a single time entry by ID.
+func (s *Store) GetTimeEntry(id int) (*model.TimeEntry, error) {
+	var entry model.TimeEntry
+	var startUnix int64
+	var stopUnix sql.NullInt64
+	err := s.db.QueryRow(`
+		SELECT id, task_id, start_at, stop_at
+		FROM time_entries
+		WHERE id = ?
+	`, id).Scan(&entry.ID, &entry.TaskID, &startUnix, &stopUnix)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("time entry with ID %d not found", id)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("could not query time entry: %w", err)
+	}
+	entry.StartAt = time.Unix(startUnix, 0)
+	if stopUnix.Valid {
+		stopTime := time.Unix(stopUnix.Int64, 0)
+		entry.StopAt = &stopTime
+	}
+	return &entry, nil
+}
+
+// UpdateTimeEntry updates a time entry's start and stop times.
+func (s *Store) UpdateTimeEntry(id int, startAt time.Time, stopAt *time.Time) error {
+	var stopUnix interface{}
+	var lastHeartbeat interface{}
+	if stopAt != nil {
+		stopUnix = stopAt.Unix()
+		lastHeartbeat = stopAt.Unix()
+	} else {
+		stopUnix = nil
+		lastHeartbeat = startAt.Unix()
+	}
+
+	result, err := s.db.Exec(`
+		UPDATE time_entries
+		SET start_at = ?, stop_at = ?, last_heartbeat = ?
+		WHERE id = ?
+	`, startAt.Unix(), stopUnix, lastHeartbeat, id)
+	if err != nil {
+		return fmt.Errorf("could not update time entry: %w", err)
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("time entry with ID %d not found", id)
+	}
+	return nil
+}
+
+
