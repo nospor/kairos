@@ -731,3 +731,17 @@ func (s *Store) LogTimeEntry(taskName, projectName string, startAt, stopAt time.
 	}
 	return nil
 }
+
+// DeleteTimeEntry deletes a specific time entry by its ID.
+func (s *Store) DeleteTimeEntry(id int) error {
+	result, err := s.db.Exec("DELETE FROM time_entries WHERE id = ?", id)
+	if err != nil {
+		return fmt.Errorf("could not delete time entry: %w", err)
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("time entry with ID %d not found", id)
+	}
+	return nil
+}
+

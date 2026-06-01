@@ -125,3 +125,49 @@ func TestLogTimeEntry(t *testing.T) {
 		t.Errorf("expected start %d and stop %d, got start %d and stop %d", start.Unix(), end.Unix(), startUnix, stopUnix)
 	}
 }
+
+func TestDeleteTimeEntry(t *testing.T) {
+	store, err := New(":memory:")
+	if err != nil {
+		t.Fatalf("failed to create store: %v", err)
+	}
+	defer store.Close()
+
+	now := time.Now()
+	err = store.LogTimeEntry("Delete Me Task", "General", now.Add(-1*time.Hour), now)
+	if err != nil {
+		t.Fatalf("failed to log time entry: %v", err)
+	}
+
+	// Get history to retrieve the ID
+	history, err := store.GetHistory(0)
+	if err != nil {
+		t.Fatalf("failed to get history: %v", err)
+	}
+	if len(history) != 1 {
+		t.Fatalf("expected 1 history entry, got %d", len(history))
+	}
+	entryID := history[0].ID
+
+	// Delete the entry
+	err = store.DeleteTimeEntry(entryID)
+	if err != nil {
+		t.Fatalf("failed to delete time entry: %v", err)
+	}
+
+	// Verify history is empty
+	history, err = store.GetHistory(0)
+	if err != nil {
+		t.Fatalf("failed to get history: %v", err)
+	}
+	if len(history) != 0 {
+		t.Errorf("expected 0 history entries after deletion, got %d", len(history))
+	}
+
+	// Try deleting a non-existent ID (should fail)
+	err = store.DeleteTimeEntry(9999)
+	if err == nil {
+		t.Error("expected error deleting non-existent time entry, got nil")
+	}
+}
+

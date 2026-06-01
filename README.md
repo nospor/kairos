@@ -56,6 +56,41 @@ kairos stop
 kairos report
 ```
 
+## Interactive TUI Dashboard
+
+Kairos features a premium, interactive terminal user interface (TUI) dashboard built with Bubble Tea and Lipgloss. Launch it with:
+
+```bash
+kairos dashboard
+
+# Or using the shorthand alias:
+kairos tui
+```
+
+### Features & Keybindings
+
+#### 1. Dashboard (Tab 1)
+* Displays the active tracking session with a real-time, ticking clock.
+* Quick actions:
+  * `n`: **Start tracking a new task** using the Project and Task Selection Dropdown.
+  * `s`: **Stop tracking** the active task.
+
+#### 2. Projects & Tasks (Tab 2)
+* Dual-pane navigation. Use `tab` or `←` / `→` keys to switch focus between the **Projects** column and the **Tasks** column.
+* Quick actions:
+  * `↑` / `↓` (or `k` / `j`): Navigate list.
+  * `c`: Create a new project or task depending on focused column.
+  * `e`: Rename the selected project or task.
+  * `d` / `backspace`: Delete the selected project or task (requires confirmation).
+  * `enter`: Start tracking the selected task.
+
+#### 3. Recent History (Tab 3)
+* Scrollable table of recent time entries with dynamically adjusting columns to fit any terminal size.
+* Quick actions:
+  * `↑` / `↓` (or `k` / `j`): Scroll list.
+  * `d` / `backspace`: Delete the selected time entry (requires confirmation).
+  * `enter`: Restart tracking this task.
+
 ## Commands
 
 ### Projects
@@ -92,6 +127,7 @@ kairos report
 | `kairos start ["Task"] [-p "Project"] [--notify N]` | Start tracking a task (defaults to General) and optionally send a desktop notification every `N` minutes. If no task name is provided, you can choose from an interactive list. |
 | `kairos status [-w]`                               | Show details and elapsed time of the currently active task (optionally watch/live-update with `-w`) |
 | `kairos stop`                                      | Stop tracking the currently active task     |
+| `kairos dashboard` (alias: `tui`)                  | Start the interactive terminal user interface (TUI) dashboard to manage tasks, projects, and history. |
 
 ### Reporting
 
