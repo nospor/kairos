@@ -663,26 +663,10 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.activeTab = tabReport
 
 		case "tab":
-			if m.activeTab == tabProjects {
-				if m.activePane == paneProjects {
-					m.activePane = paneTasks
-				} else {
-					m.activePane = paneProjects
-				}
-			} else {
-				m.activeTab = (m.activeTab + 1) % 4
-			}
+			m.activeTab = (m.activeTab + 1) % 4
 
 		case "shift+tab":
-			if m.activeTab == tabProjects {
-				if m.activePane == paneProjects {
-					m.activePane = paneTasks
-				} else {
-					m.activePane = paneProjects
-				}
-			} else {
-				m.activeTab = (m.activeTab - 1 + 4) % 4
-			}
+			m.activeTab = (m.activeTab - 1 + 4) % 4
 
 		case "up", "k":
 			switch m.activeTab {
