@@ -195,7 +195,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		// Adjust history viewport limit based on height
-		m.historyLimit = max(5, m.height-12)
+		m.historyLimit = max(3, m.height-19)
 		return m, nil
 
 	case string:
@@ -760,8 +760,7 @@ var (
 			Bold(true).
 			Foreground(lipgloss.Color("#FFFFFF")).
 			Border(lipgloss.NormalBorder(), false, false, true, false).
-			BorderForeground(colorPurple).
-			MarginBottom(1)
+			BorderForeground(colorPurple)
 
 	styleSelected = lipgloss.NewStyle().
 			Bold(true).
@@ -799,8 +798,7 @@ func (m mainModel) View() string {
 	var s strings.Builder
 
 	// 1. Header
-	s.WriteString("\n")
-	s.WriteString(styleTitle.Render(" KAIROS TIME TRACKER "))
+	s.WriteString(styleTitle.Render(" KAIROS TIME TRACKER ") + " ")
 	s.WriteString(lipgloss.NewStyle().Foreground(colorGray).Italic(true).Render("Manage your time in style"))
 	s.WriteString("\n\n")
 
@@ -837,11 +835,10 @@ func (m mainModel) View() string {
 
 	// 4. Toast notifications
 	if m.errorMsg != "" {
-		s.WriteString(styleWarning.Render("❌  " + m.errorMsg))
+		s.WriteString(styleWarning.Render("❌  " + m.errorMsg) + "\n")
 	} else if m.successMsg != "" {
-		s.WriteString(styleSuccess.Render("✔️  " + m.successMsg))
+		s.WriteString(styleSuccess.Render("✔️  " + m.successMsg) + "\n")
 	}
-	s.WriteString("\n\n")
 
 	// 5. Help Footer
 	s.WriteString(m.drawHelp())
@@ -881,14 +878,14 @@ func (m mainModel) drawDashboard() string {
 		body.WriteString(styleMuted.Render("or switch to 'PROJECTS & TASKS' (2) to select an existing task.") + "\n")
 	}
 
-	heightVal := max(8, m.height-14)
+	heightVal := max(8, m.height-10)
 	return styleBoxActive.Height(heightVal).Width(max(40, m.width-6)).Render(body.String())
 }
 
 func (m mainModel) drawProjects() string {
 	leftWidth := max(20, m.width/3)
 	rightWidth := max(30, m.width-leftWidth-12)
-	heightVal := max(8, m.height-14)
+	heightVal := max(8, m.height-10)
 
 	leftInnerWidth := leftWidth - 6
 	rightInnerWidth := rightWidth - 6
@@ -970,7 +967,7 @@ func (m mainModel) drawProjects() string {
 func (m mainModel) drawHistory() string {
 	var body strings.Builder
 	widthVal := max(50, m.width-6)
-	heightVal := max(8, m.height-14)
+	heightVal := max(8, m.height-10)
 	innerWidth := widthVal - 6
 
 	body.WriteString(styleHeader.Width(innerWidth).Render("RECENT HISTORY") + "\n")
@@ -1024,7 +1021,7 @@ func (m mainModel) drawHistory() string {
 
 		// Scroll indicator
 		if len(m.history) > m.historyLimit {
-			body.WriteString("\n" + styleMuted.Render(fmt.Sprintf("  Row %d to %d of %d (Use ↑/↓ keys to scroll)", m.historyOffset+1, endIndex, len(m.history))))
+			body.WriteString(styleMuted.Render(fmt.Sprintf("  Row %d to %d of %d (Use ↑/↓ keys to scroll)", m.historyOffset+1, endIndex, len(m.history))))
 		}
 	}
 
@@ -1135,7 +1132,7 @@ func (m mainModel) drawModal() string {
 	}
 
 	body := fmt.Sprintf("%s\n\n%s", lipgloss.NewStyle().Bold(true).Foreground(colorPink).Render(title), content.String())
-	heightVal := max(8, m.height-14)
+	heightVal := max(8, m.height-10)
 	return lipgloss.NewStyle().
 		Align(lipgloss.Center).
 		Width(max(40, m.width-6)).
