@@ -1,4 +1,18 @@
 
+## [1.2.6] - 2026-06-16
+
+### Features
+
+- *(tui)* Add 4th tab for report commands and analytics
+
+### Bug Fixes
+
+- *(tui)* Disable tab-key pane switching on projects tab
+
+    Disable pane switching with Tab/Shift+Tab on the projects tab to avoid
+    breaking the main tab navigation. Users can still navigate panes using
+    the arrow keys (left/right/h/l).
+
 ## [1.2.5] - 2026-06-16
 
 ### Bug Fixes
@@ -8,6 +22,7 @@
 ### Miscellaneous Tasks
 
 - Update CHANGELOG.md for v1.2.4 [skip ci]
+- Update CHANGELOG.md for v1.2.5 [skip ci]
 
 ## [1.2.4] - 2026-06-01
 
