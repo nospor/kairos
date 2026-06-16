@@ -1,4 +1,14 @@
 
+## [1.2.5] - 2026-06-16
+
+### Bug Fixes
+
+- *(tui)* Prevent view scrolling/jumping on recent history tab
+
+### Miscellaneous Tasks
+
+- Update CHANGELOG.md for v1.2.4 [skip ci]
+
 ## [1.2.4] - 2026-06-01
 
 ### Bug Fixes

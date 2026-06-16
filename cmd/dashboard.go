@@ -835,9 +835,9 @@ func (m mainModel) View() string {
 
 	// 4. Toast notifications
 	if m.errorMsg != "" {
-		s.WriteString(styleWarning.Render("❌  " + m.errorMsg) + "\n")
+		s.WriteString(styleWarning.Render("❌  "+m.errorMsg) + "\n")
 	} else if m.successMsg != "" {
-		s.WriteString(styleSuccess.Render("✔️  " + m.successMsg) + "\n")
+		s.WriteString(styleSuccess.Render("✔️  "+m.successMsg) + "\n")
 	}
 
 	// 5. Help Footer
