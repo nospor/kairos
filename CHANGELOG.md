@@ -1,4 +1,14 @@
 
+## [1.2.7] - 2026-06-22
+
+### Features
+
+- *(db)* Use ISO-8601 week numbering for weekly reports
+
+### Miscellaneous Tasks
+
+- Update CHANGELOG.md for v1.2.6 [skip ci]
+
 ## [1.2.6] - 2026-06-16
 
 ### Features
