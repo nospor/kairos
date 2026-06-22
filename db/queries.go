@@ -316,7 +316,7 @@ func (s *Store) GetReport(filter ReportFilter) ([]model.ReportRow, error) {
 	case "day":
 		dateExpr = "strftime('%Y-%m-%d', datetime(te.start_at, 'unixepoch', 'localtime'))"
 	case "week":
-		dateExpr = "strftime('%Y-%W', datetime(te.start_at, 'unixepoch', 'localtime'))"
+		dateExpr = "strftime('%Y', date(datetime(te.start_at, 'unixepoch', 'localtime'), '-3 days', 'weekday 4')) || '-' || printf('%02d', (strftime('%j', date(datetime(te.start_at, 'unixepoch', 'localtime'), '-3 days', 'weekday 4')) - 1) / 7 + 1)"
 	case "month":
 		dateExpr = "strftime('%Y-%m', datetime(te.start_at, 'unixepoch', 'localtime'))"
 	case "year":
